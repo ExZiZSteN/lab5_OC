@@ -41,7 +41,7 @@ class Database:
         
         self.connection.commit()
 
-    def add_nodes(self, user_id, Nodes):
+    def add_note(self, user_id, Note):
         """
         Добавление заметки в БД
         """
@@ -83,3 +83,85 @@ class Database:
             return notes
         except:
             return []
+        
+    def get_note_by_id(self, note_id):
+        """
+        Получить заметку по ID
+        """
+        try:
+            self.cursor.execute("""
+                SELECT id, title, content
+                FROM notes 
+                WHERE id = %s
+            """, (note_id))
+
+            # проверка строки на наличие данных
+            row = self.cursor.fetchone()
+            if not row:
+                return None
+            
+            # создание словаря с параметрами из БД
+            columns = ['id', 'title', 'content']
+            return dict(zip(columns, row))
+    
+        except:
+            return None
+        
+    def update_note(self, note_id, user_id, title=None, content=None):
+        """
+        Обновить заметку
+        Args:
+            updates = хранение обновлённых частей
+            params = хранение обновлённых значений
+        """
+        try:
+            updates = []
+            params = [] 
+            
+            if title:
+                updates.append("title = %s")
+                params.append(title)
+            
+            if content:
+                updates.append("content = %s")
+                params.append(content)
+
+            if not updates:
+                return False
+
+            self.cursor.execute(f"""
+                UPDATE notes
+                SET {', '.join(updates)} 
+                WHERE id = %s
+                RETURNING id
+                """, (note_id, user_id))
+
+            updated = self.cursor.fetchone() is not None
+
+            if updated:
+                self.connection.commit()
+
+            return updated
+        except:
+            return False
+
+    def delete_note(self, note_id):
+        """
+        Удалить заметку
+        """
+        try:
+            self.cursor.execute("""
+                DELETE FROM notes 
+                WHERE id = %s
+                RETURNING id
+            """, (note_id))
+
+            # проверка удаления записи
+            deleted = self.cursor.fetchone() is not None
+            if deleted:
+                self.connection.commit()
+            
+            return deleted
+    
+        except:
+            return False
