@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from Nodes import *
+from Note import *
 
 
 class Database:
@@ -41,14 +41,14 @@ class Database:
         
         self.connection.commit()
 
-    def add_nodes(self, user_id, Nodes):
+    def add_Note(self, user_id, Note):
         """
         Добавление заметки в БД
         """
         try:
             self.cursor.execute(
             """INSERT INTO notes (user_id, title, content) 
-            VALUES (%s, %s, %s) RETURNING id""", (user_id, Nodes.title, Nodes.content)
+            VALUES (%s, %s, %s) RETURNING id""", (user_id, Note.title, Note.content)
             )
 
             # получение обратного ID заметки из БД
