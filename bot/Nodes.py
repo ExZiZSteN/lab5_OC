@@ -1,10 +1,15 @@
 class Nodes:
-    '''
+    """
     Представляет заметку с именем и текстом.
-    name = Имя заметки
-    text = Текст заметки
-    '''
+    """
     def __init__(self,name,text):
+        """
+        Представляет заметку с именем и текстом.
+
+        Args:
+            name = Имя заметки
+            text = Текст заметки
+        """
         self.name = name
         self.text = text
     
@@ -13,16 +18,24 @@ class Nodes:
     newText = Новый текст заметки
     '''
     def editText(self,newText):
+        """
+        Редактируем текст зметки.
+
+        Args:
+            newText = Новый текст заметки
+        """
+
         self.text = newText
 
-    '''
-    Получаем имя заметки.
-    '''
     def getName(self):
+        """
+        Получаем имя заметки.
+        """
         return self.name
     
-    '''
-    Получаем текст заметки
-    '''
+
     def getText(self):
+        """
+        Получаем текст заметки
+        """
         return self.text
