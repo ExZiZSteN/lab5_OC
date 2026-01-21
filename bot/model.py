@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from Nodes import *
+from Note import *
 
 
 class Database:
