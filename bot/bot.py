@@ -127,7 +127,6 @@ def viewNotes(call):
     try:
         bot.answer_callback_query(call.id)
         userId = call.from_user.id
-        db_user_id = db.get_userID(userId)
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")

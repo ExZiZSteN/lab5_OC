@@ -132,7 +132,7 @@ class Database:
         """
         try:
             self.cursor.execute("""
-                SELECT id, title, content
+                SELECT id, title, content 
                 FROM notes 
                 WHERE user_id = %s 
                                  """, (user_id))
@@ -175,7 +175,7 @@ class Database:
             print(e)
             return None
         
-    def update_note(self, note_id, user_id, title=None, content=None):
+    def update_note(self, note_id, content=None):
         """
         Обновить заметку
         Args:
@@ -183,23 +183,9 @@ class Database:
             params = хранение обновлённых значений
         """
         try:
-            updates = []
-            params = [] 
-            
-            if title:
-                updates.append("title = %s")
-                params.append(title)
-            
-            if content:
-                updates.append("content = %s")
-                params.append(content)
-
-            if not updates:
-                return False
-
             self.cursor.execute(f"""
                 UPDATE notes
-                SET {', '.join(updates)} 
+                SET {content} 
                 WHERE id = %s
                 RETURNING id
                 """, (note_id))
