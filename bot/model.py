@@ -106,6 +106,26 @@ class Database:
             self.connection.rollback()
             return None
 
+    def get_userId(self,telegramID):
+        """
+        Получение ID пользователя по его telegram ID
+        """
+        try:
+            self.cursor.execute("""
+                SELECT id 
+                FROM users 
+                WHERE telegram_id = %s
+            """, (telegramID,))
+
+            row = self.cursor.fetchone()
+            if not row:
+                return None
+            
+            return row[0]
+        except Exception as e:
+            print(e)
+            return None
+
     def get_user_notes(self, user_id):
         """
         Получение всех заметок пользователя
