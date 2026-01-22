@@ -134,48 +134,45 @@ class Database:
             self.cursor.execute("""
                 SELECT id, title, content 
                 FROM notes 
-                WHERE user_id = %s 
-                                 """, (user_id))
+                WHERE user_id = %s
+            """, (user_id,))
 
-            columns = ['id', 'title', 'content']
-            notes = []
-        
+            rows = self.cursor.fetchall()
             # создание словарей с отображением в них параметров заметки из БД
-            for row in self.cursor.fetchall():
-                note_dict = {}
-                for i, column in enumerate(columns):
-                    note_dict[column] = row[i]
-                notes.append(note_dict)
-            return notes   
+            # columns = ['id', 'title', 'content']
+            # notes = [
+            #     dict(zip(columns, row))
+            #     for row in rows
+            # ]
+            notes = [Note(id=row[0],title=row[1], content=row[2]) for row in rows]
+            return notes
         except Exception as e:
             print(e)
             return []
         
     def get_note_by_id(self, note_id):
         """
-        Получить заметку по ID
+        Получить заметку по ID как словарь
         """
         try:
             self.cursor.execute("""
                 SELECT id, title, content
                 FROM notes 
                 WHERE id = %s
-            """, (note_id))
+            """, (note_id,))
 
-            # проверка строки на наличие данных
             row = self.cursor.fetchone()
             if not row:
                 return None
-            
-            # создание словаря с параметрами из БД
-            columns = ['id', 'title', 'content']
-            return dict(zip(columns, row))
-    
+
+            note = Note(id=row[0], title=row[1], content=row[2])
+
+            return note
         except Exception as e:
             print(e)
             return None
-        
-    def update_note(self, note_id, content=None):
+
+    def update_note(self, note):
         """
         Обновить заметку
         Args:
@@ -183,12 +180,12 @@ class Database:
             params = хранение обновлённых значений
         """
         try:
-            self.cursor.execute(f"""
+            self.cursor.execute("""
                 UPDATE notes
-                SET {content} 
+                SET content = %s 
                 WHERE id = %s
                 RETURNING id
-                """, (note_id))
+                """, (note.content,note.id))
 
             updated = self.cursor.fetchone() is not None
 
@@ -209,7 +206,7 @@ class Database:
                 DELETE FROM notes 
                 WHERE id = %s
                 RETURNING id
-            """, (note_id))
+            """, (note_id,))
 
             # проверка удаления записи
             deleted = self.cursor.fetchone() is not None
