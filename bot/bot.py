@@ -12,7 +12,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# db = Database()
+db = Database()
 
 #Ключ id пользователя, значение словарь с ключами 'title' и 'text'
 userTempData = {}
@@ -100,18 +100,28 @@ def handleNoteText(message,userId,oldMessage):
 
 @bot.callback_query_handler(func=lambda call: call.data == "addNote")
 def addNote(call):
-    bot.answer_callback_query(call.id)
-    note = Note(userTempData[call.from_user.id]['title'],userTempData[call.from_user.id]['text'])
-    userId = call.from_user.id
-    username = call.from_user.username
-    db.add_user(userId, username)
-    db.add_note(userId, note)
-    сonfirmText = "Заметка успешно добавлена!"
-    markup = types.InlineKeyboardMarkup()
-    btnMenu = types.InlineKeyboardButton("Меню", callback_data="mainMenu")
-    markup.add(btnMenu)
-    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=сonfirmText,reply_markup=markup)
-
+    try:
+        bot.answer_callback_query(call.id)
+        note = Note(
+            userTempData[call.from_user.id]['title'],
+            userTempData[call.from_user.id]['text']
+            )
+        userId = call.from_user.id
+        username = call.from_user.username
+        db_user_id = db.add_user(userId, username)
+        db.add_note(db_user_id, note)
+        confirmText = "Заметка успешно добавлена!"
+        markup = types.InlineKeyboardMarkup()
+        btnMenu = types.InlineKeyboardButton("Меню", callback_data="mainMenu")
+        markup.add(btnMenu)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=confirmText,reply_markup=markup)
+    except Exception as e:
+        print("USER")
+        print(userId, username)
+        print(type(userId),type(username))
+        print(e)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
+        
 @bot.callback_query_handler(func=lambda call: call.data == "viewNotes")
 def viewNotes(call):
     try:
