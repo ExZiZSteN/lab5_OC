@@ -7,14 +7,6 @@ from model import Database
 from User import User
 from main import bot, db
 
-load_dotenv()
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-bot = telebot.TeleBot(BOT_TOKEN)
-
-db = Database()
-
 #Ключ id пользователя, значение словарь с ключами 'title' и 'text'
 userTempData = {}
 
