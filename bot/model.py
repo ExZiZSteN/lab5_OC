@@ -52,7 +52,7 @@ class Database:
         
         self.connection.commit()
 
-    def add_user(self, telegramId,username):
+    def add_user(self, telegramId, username):
         """
         Добавление пользователя
         
@@ -192,7 +192,7 @@ class Database:
             if updated:
                 self.connection.commit()
 
-            return updated
+            return updated  
         except Exception as e:
             print(e)
             return False
