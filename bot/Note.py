@@ -2,14 +2,16 @@ class Note:
     """
     Представляет заметку с именем и текстом.
     """
-    def __init__(self,title="",content=""):
+    def __init__(self,id=None,title="",content=""):
         """
         Представляет заметку с именем и текстом.
 
         Args:
+            id = ID заметки
             name = Имя заметки
             text = Текст заметки
         """
+        self.id = id
         self.title = title
         self.content = content
     

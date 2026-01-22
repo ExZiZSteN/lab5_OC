@@ -34,8 +34,7 @@ def continue1(call):
         markup = types.InlineKeyboardMarkup()
         btnCreate = types.InlineKeyboardButton("Создать заметку", callback_data = "createNote")
         btnView = types.InlineKeyboardButton("Просмотреть заметки", callback_data = "viewNotes")
-        btnDelete = types.InlineKeyboardButton("Удалить заметку", callback_data="deleteNote")
-        markup.add(btnCreate, btnView, btnDelete)
+        markup.add(btnCreate, btnView)
         newText = "Выберите действие:"
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text = newText, reply_markup = markup)
     except Exception as e:
@@ -116,9 +115,6 @@ def addNote(call):
         markup.add(btnMenu)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=confirmText,reply_markup=markup)
     except Exception as e:
-        print("USER")
-        print(userId, username)
-        print(type(userId),type(username))
         print(e)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
         
@@ -135,16 +131,86 @@ def viewNotes(call):
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="У вас нет заметок. Сначала создайте заметку.",reply_markup=markup)
             return
         notes = db.get_user_notes(db_user_id)
-        print(notes)
+        markup = types.InlineKeyboardMarkup()
+        btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+        markup.add(btnBack)
+        if not notes:
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="У вас нет заметок. Сначала создайте заметку.",reply_markup=markup)
+            return
+        notesText = "Ваши заметки:\n(Для редактирования напшити id заметки)\n\n"
+        for note in notes:
+            notesText += f"id: {note.id}\nНазвание: {note.title} \n\n"
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=notesText,reply_markup=markup)
+        bot.register_next_step_handler(call.message,editNote,call,call)
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
 
+def editNote(message,userId,oldMessage):
+    try:
+        noteId = message.text.strip()
+        if not noteId.isdigit():
+            markup = types.InlineKeyboardMarkup()
+            btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+            markup.add(btnBack)
+            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Введите корректный id заметки",reply_markup=markup)
+            bot.register_next_step_handler(msg,editNote,userId,oldMessage)
+            return
+        bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
+        noteId = int(noteId)
+        note = db.get_note_by_id(noteId)
+        if note is None:
+            markup = types.InlineKeyboardMarkup()
+            btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+            markup.add(btnBack)
+            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Заметка с таким id не найдена. Введите корректный id заметки",reply_markup=markup)
+            bot.register_next_step_handler(msg,editNote,userId,oldMessage)
+            return
+        markup = types.InlineKeyboardMarkup()
+        btnDelete = types.InlineKeyboardButton("Удалить заметку", callback_data=f"deleteNote_{note.id}")
+        btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+        markup.add(btnDelete,btnBack)
+        bot.edit_message_text(chat_id=message.chat.id, message_id=oldMessage.message.message_id, text=f"Заметка с id={noteId}\n Название: {note.getTitle()}\n Текст: {note.getContent()}\n\n выбрана для редактирования, вы можете ввести новый текст заметки", reply_markup=markup)
+        bot.register_next_step_handler(oldMessage.message,handleEditNoteText,note,oldMessage)
+    except Exception as e:
+        print(e)
+        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Что-то пошло не так")
 
-@bot.callback_query_handler(func=lambda call: call.data == "deleteNote")
+def handleEditNoteText(message,note,oldMessage):
+    try:
+        newText = message.text.strip()
+        if not newText:
+            markup = types.InlineKeyboardMarkup()
+            btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+            markup.add(btnBack)
+            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Текст заметки не может быть пустым",reply_markup=markup)
+            bot.register_next_step_handler(msg,handleEditNoteText,note,oldMessage)
+            return
+        bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
+        note.setContent(newText)
+        db.update_note(note)
+        confirmText = f"Заметка успешно отредактирована!\n\nid: {note.id}\nНазвание: {note.getTitle()}\nНовое содержимое: \n " + newText
+        markup = types.InlineKeyboardMarkup()
+        btnDelete = types.InlineKeyboardButton("Удалить заметку", callback_data=f"deleteNote_{note.id}")
+        btnMenu = types.InlineKeyboardButton("Меню", callback_data="mainMenu")
+        markup.add(btnDelete, btnMenu)
+        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text=confirmText,reply_markup=markup)
+    except Exception as e:
+        print(e)
+        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text="Что-то пошло не так")
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("deleteNote_"))
 def deleteNote(call):
     try:
+        markup = types.InlineKeyboardMarkup()
+        btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+        markup.add(btnBack)
         bot.answer_callback_query(call.id)
+        noteId = call.data.split("_")[1]
+        print(noteId)
+        db.delete_note(noteId)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Заметка удалена",reply_markup=markup)
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
