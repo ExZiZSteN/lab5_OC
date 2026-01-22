@@ -17,9 +17,16 @@ class Database:
         db_url = os.getenv('DATABASE_URL')
 
         # подключение к postgresql
-        self.connection = psycopg2.connect(db_url)
+        # self.connection = psycopg2.connect(db_url)
+        # self.cursor = self.connection.cursor()
+        self.connection = psycopg2.connect(
+            dbname=os.getenv("POSTGRES_DB"),
+            user=os.getenv("POSTGRES_USER"),
+            password=os.getenv("POSTGRES_PASSWORD"),
+            host="db",
+            port=5432
+        )
         self.cursor = self.connection.cursor()
-
         self.create_tables()
 
     def create_tables(self):
@@ -55,7 +62,7 @@ class Database:
         """
         try:
             self.cursor.execute(
-                """INSRERT INTO users (telegram_id, username)
+                """INSERT INTO users (telegram_id, username)
                 VALUES (%s, %s) ON CONFLICT (telegram_id) DO NOTHING""", (telegramId, username)
             )
             userId = self.cursor.fetchone()[0]
@@ -166,7 +173,7 @@ class Database:
                 SET {', '.join(updates)} 
                 WHERE id = %s
                 RETURNING id
-                """, (note_id, user_id))
+                """, (note_id))
 
             updated = self.cursor.fetchone() is not None
 
