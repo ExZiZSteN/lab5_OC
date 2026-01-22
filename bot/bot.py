@@ -12,7 +12,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-db = Database()
+# db = Database()
 
 #Ключ id пользователя, значение словарь с ключами 'title' и 'text'
 userTempData = {}
@@ -112,6 +112,14 @@ def addNote(call):
     markup.add(btnMenu)
     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=сonfirmText,reply_markup=markup)
 
+@bot.callback_query_handler(func=lambda call: call.data == "viewNotes")
+def viewNotes(call):
+    try:
+        bot.answer_callback_query(call.id)
+        
+    except Exception as e:
+        print(e)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
 
 
 #Чтобы бот не переставал работать
