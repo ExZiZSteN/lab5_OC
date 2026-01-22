@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from Note import Note
 from model import Database
 from User import User
+from main import bot, db
 
 load_dotenv()
 
