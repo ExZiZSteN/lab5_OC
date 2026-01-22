@@ -1,7 +1,7 @@
 import os
 import psycopg2
 from Note import *
-
+from User import User
 
 class Database:
     def __init__(self):
@@ -41,9 +41,33 @@ class Database:
         
         self.connection.commit()
 
+    def add_user(self, telegramId,username):
+        """
+        Добавление пользователя
+        
+        Args:
+            telegramId: ID в телеграме
+            username: Имя пользователя в телеграме
+        """
+        try:
+            self.cursor.execute(
+                """INSRERT INTO users (telegram_id, username)
+                VALUES (%s, %s) ON CONFLICT (telegram_id) DO NOTHING""", (telegramId, username)
+            )
+            userId = self.cursor.fetchone()[0]
+            self.connection.commit()
+            return userId
+        except:
+            self.connection.rollback()
+            return None
+
     def add_note(self, user_id, Note):
         """
         Добавление заметки в БД
+
+        Args:
+            user_id: id пользователя
+            Note: заметка
         """
         try:
             self.cursor.execute(

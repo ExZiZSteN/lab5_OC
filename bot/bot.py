@@ -3,6 +3,8 @@ import telebot
 from telebot import types
 from dotenv import load_dotenv
 from Note import Note
+from model import Database
+from User import User
 
 load_dotenv()
 
@@ -10,6 +12,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
+db = Database()
 
 #Ключ id пользователя, значение словарь с ключами 'title' и 'text'
 userTempData = {}
@@ -69,7 +72,7 @@ def handleNoteName(message,userId,oldMessage):
             return
         
         userTempData[userId] = {'title':title}
-
+        bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
         msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text=f"Название заметки сохраненно: {title}.\n Введите текст заметки:",reply_markup=markup)
         bot.register_next_step_handler(msg,handleNoteText,userId,oldMessage)
     except Exception as e:
@@ -80,7 +83,8 @@ def handleNoteText(message,userId,oldMessage):
     try:
         markup = types.InlineKeyboardMarkup()
         btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
-        markup.add(btnBack)
+        btnAdd = types.InlineKeyboardButton("Добавить заметку", callback_data="addNote")
+        markup.add(btnAdd,btnBack)
         text1 = message.text.strip()
         if not text1:
             msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Текст заметки не может быть пустым",reply_markup=markup)
@@ -88,9 +92,26 @@ def handleNoteText(message,userId,oldMessage):
             return
         
         userTempData[userId]['text'] = text1
+        bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
+        msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text=f"Созданная заметка:\n{userTempData[userId]['title']}\n\n{text1}.",reply_markup=markup)
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text="Что-то пошло не так",reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data == "addNote")
+def addNote(call):
+    bot.answer_callback_query(call.id)
+    note = Note(userTempData[call.from_user.id]['title'],userTempData[call.from_user.id]['text'])
+    userId = call.from_user.id
+    username = call.from_user.username
+    db.add_user(userId, username)
+    db.add_note(userId, note)
+    сonfirmText = "Заметка успешно добавлена!"
+    markup = types.InlineKeyboardMarkup()
+    btnMenu = types.InlineKeyboardButton("Меню", callback_data="mainMenu")
+    markup.add(btnMenu)
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=сonfirmText,reply_markup=markup)
+
 
 
 #Чтобы бот не переставал работать
