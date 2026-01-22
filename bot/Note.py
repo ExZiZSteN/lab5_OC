@@ -2,7 +2,7 @@ class Note:
     """
     Представляет заметку с именем и текстом.
     """
-    def __init__(self,name="",text=""):
+    def __init__(self,title="",content=""):
         """
         Представляет заметку с именем и текстом.
 
@@ -10,50 +10,47 @@ class Note:
             name = Имя заметки
             text = Текст заметки
         """
-        self.name = name
-        self.text = text
+        self.title = title
+        self.content = content
     
-    '''
-    Редактируем текст зметки.
-    newText = Новый текст заметки
-    '''
-    def editText(self,newText):
+
+    def editContent(self,newContent):
         """
         Редактируем текст зметки.
 
         Args:
-            newText = Новый текст заметки
+            newContent = Новый текст заметки
         """
 
-        self.text = newText
+        self.content = newContent
 
-    def getName(self):
+    def getTitle(self):
         """
         Получаем имя заметки.
         """
-        return self.name
+        return self.title
     
 
-    def getText(self):
+    def getContent(self):
         """
         Получаем текст заметки
         """
-        return self.text
+        return self.content
     
-    def setText(self,text):
+    def setContent(self,content):
         """
         Устанавливаем текст заметки.
 
         Args:
-            text = Текст заметки
+            content = Текст заметки
         """
-        self.text = text
+        self.content = content
     
-    def setName(self,name):
+    def setTitle(self,title):
         """
         Устанавливаем имя заметки.
 
         Args:
-            name = Имя заметки
+            title = Имя заметки
         """
-        self.name = name
+        self.title = title

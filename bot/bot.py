@@ -122,5 +122,13 @@ def viewNotes(call):
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
 
 
+@bot.callback_query_handler(func=lambda call: call.data == "deleteNote")
+def deleteNote(call):
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception as e:
+        print(e)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
+
 #Чтобы бот не переставал работать
 bot.polling(none_stop=True)
