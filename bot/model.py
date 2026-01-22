@@ -23,7 +23,7 @@ class Database:
             dbname=os.getenv("POSTGRES_DB"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
-            host="db",
+            host="localhost",
             port=5432
         )
         self.cursor = self.connection.cursor()
@@ -61,13 +61,22 @@ class Database:
             username: Имя пользователя в телеграме
         """
         try:
-            self.cursor.execute(
-                """INSERT INTO users (telegram_id, username)
-                VALUES (%s, %s) ON CONFLICT (telegram_id) DO NOTHING""", (telegramId, username)
-            )
-            userId = self.cursor.fetchone()[0]
+            self.cursor.execute("""
+                INSERT INTO users (telegram_id, username)
+                VALUES (%s, %s)
+                ON CONFLICT (telegram_id) DO NOTHING
+                RETURNING id
+            """, (telegramId, username))
+
+            row = self.cursor.fetchone()
             self.connection.commit()
-            return userId
+
+            if row:                  # новый пользователь
+                return row[0]
+
+            # если пользователь уже был
+            self.cursor.execute("SELECT id FROM users WHERE telegram_id = %s", (telegramId,))
+            return self.cursor.fetchone()[0]
         except Exception as e:
             print(e)
             self.connection.rollback()
