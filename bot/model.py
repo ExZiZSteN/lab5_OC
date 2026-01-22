@@ -2,6 +2,10 @@ import os
 import psycopg2
 from Note import *
 from User import User
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 class Database:
     def __init__(self):
@@ -57,7 +61,8 @@ class Database:
             userId = self.cursor.fetchone()[0]
             self.connection.commit()
             return userId
-        except:
+        except Exception as e:
+            print(e)
             self.connection.rollback()
             return None
 
@@ -80,7 +85,8 @@ class Database:
             self.connection.commit()
             return note_id
         
-        except:
+        except Exception as e:
+            print(e)
             self.connection.rollback()
             return None
 
@@ -105,7 +111,8 @@ class Database:
                     note_dict[column] = row[i]
                 notes.append(note_dict)
             return notes
-        except:
+        except Exception as e:
+            print(e)
             return []
         
     def get_note_by_id(self, note_id):
@@ -128,7 +135,8 @@ class Database:
             columns = ['id', 'title', 'content']
             return dict(zip(columns, row))
     
-        except:
+        except Exception as e:
+            print(e)
             return None
         
     def update_note(self, note_id, user_id, title=None, content=None):
@@ -166,7 +174,8 @@ class Database:
                 self.connection.commit()
 
             return updated
-        except:
+        except Exception as e:
+            print(e)
             return False
 
     def delete_note(self, note_id):
@@ -187,5 +196,6 @@ class Database:
             
             return deleted
     
-        except:
+        except Exception as e:
+            print(e)
             return False
