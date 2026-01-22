@@ -1,9 +1,6 @@
 import os
 import telebot
-from dotenv import load_dotenv
 from model import Database
-
-load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 

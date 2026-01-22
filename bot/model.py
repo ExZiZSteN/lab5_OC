@@ -2,10 +2,7 @@ import os
 import psycopg2
 from Note import *
 from User import User
-from dotenv import load_dotenv
 
-
-load_dotenv()
 
 class Database:
     def __init__(self):
@@ -14,16 +11,12 @@ class Database:
         Args:
             db_url = URL базы данных
         """
-        db_url = os.getenv('DATABASE_URL')
 
-        # подключение к postgresql
-        # self.connection = psycopg2.connect(db_url)
-        # self.cursor = self.connection.cursor()
         self.connection = psycopg2.connect(
             dbname=os.getenv("POSTGRES_DB"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
-            host="localhost",
+            host="db",
             port=5432
         )
         self.cursor = self.connection.cursor()
@@ -138,12 +131,7 @@ class Database:
             """, (user_id,))
 
             rows = self.cursor.fetchall()
-            # создание словарей с отображением в них параметров заметки из БД
-            # columns = ['id', 'title', 'content']
-            # notes = [
-            #     dict(zip(columns, row))
-            #     for row in rows
-            # ]
+
             notes = [Note(id=row[0],title=row[1], content=row[2]) for row in rows]
             return notes
         except Exception as e:

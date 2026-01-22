@@ -1,15 +1,16 @@
 import os
 import telebot
 from telebot import types
-from dotenv import load_dotenv
 from Note import Note
 from model import Database
 from User import User
 from main import bot, db
 
+
 #Ключ id пользователя, значение словарь с ключами 'title' и 'text'
 userTempData = {}
 
+user_states = {}
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -21,8 +22,10 @@ def start(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "mainMenu")
-def continue1(call):
+def menu(call):
     try:
+        user_id = call.from_user.id
+        user_states[user_id] = 'menu'
         bot.answer_callback_query(call.id)
         markup = types.InlineKeyboardMarkup()
         btnCreate = types.InlineKeyboardButton("Создать заметку", callback_data = "createNote")
@@ -38,40 +41,51 @@ def continue1(call):
 def createNote(call):
     try:
         bot.answer_callback_query(call.id)
+        user_id = call.from_user.id
+        user_states[user_id] = 'creating_note'
         newText = "Создать заметку\n Формат (Название заметки) (Текст заметки)\n Двумя разными сообщенимями."
         markup = types.InlineKeyboardMarkup()
         btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
         markup.add(btnBack)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text = newText, reply_markup=markup)
-        bot.register_next_step_handler(call.message,handleNoteName,call.from_user.id,call)  
+        bot.register_next_step_handler(call.message,handleNoteName,user_id,call.message.message_id)  
     except Exception as e:
         print(e)
         bot.send_message(call.message.chat.id, "Что-то пошло не так")
 
 def handleNoteName(message,userId,oldMessage):
+
+    if userId not in user_states or user_states.get(userId) != 'creating_note':
+        # Пользователь вышел из состояния создания заметки
+        bot.delete_message(message.chat.id, message.message_id)
+        return
     try:
         title = message.text.strip()
         markup = types.InlineKeyboardMarkup()
         btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
         markup.add(btnBack)
         if not title:
-            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Название заметки не может быть пустым",reply_markup=markup)
+            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage, text="Название заметки не может быть пустым",reply_markup=markup)
             bot.register_next_step_handler(msg,handleNoteName,userId,oldMessage)
             return    
         if len(title) > 50:
-            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Название слишком длинное. Введите короче",reply_markup=markup)
+            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage, text="Название слишком длинное. Введите короче",reply_markup=markup)
             bot.register_next_step_handler(msg,handleNoteName,userId,oldMessage)
             return
         
         userTempData[userId] = {'title':title}
         bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
-        msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text=f"Название заметки сохраненно: {title}.\n Введите текст заметки:",reply_markup=markup)
+        msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage,text=f"Название заметки сохраненно: {title}.\n Введите текст заметки:",reply_markup=markup)
         bot.register_next_step_handler(msg,handleNoteText,userId,oldMessage)    
     except Exception as e:
         print(e)
-        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Что-то пошло не так")
+        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage, text="Что-то пошло не так")
 
 def handleNoteText(message,userId,oldMessage):
+    if userId not in user_states or user_states.get(userId) != 'creating_note':
+        # Пользователь вышел из состояния создания заметки
+        bot.delete_message(message.chat.id, message.message_id)
+        return
     try:
         markup = types.InlineKeyboardMarkup()
         btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
@@ -79,26 +93,27 @@ def handleNoteText(message,userId,oldMessage):
         markup.add(btnAdd,btnBack)
         text1 = message.text.strip()
         if not text1:
-            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Текст заметки не может быть пустым",reply_markup=markup)
+            msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage, text="Текст заметки не может быть пустым",reply_markup=markup)
             bot.register_next_step_handler(msg,handleNoteText,userId,oldMessage)
             return
         
         userTempData[userId]['text'] = text1
         bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
-        msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text=f"Созданная заметка:\n{userTempData[userId]['title']}\n\n{text1}.",reply_markup=markup)
+        msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage,text=f"Созданная заметка:\n{userTempData[userId]['title']}\n\n{text1}.",reply_markup=markup)
     except Exception as e:
         print(e)
-        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text="Что-то пошло не так",reply_markup=markup)
+        bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage,text="Что-то пошло не так",reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data == "addNote")
 def addNote(call):
+    
     try:
         bot.answer_callback_query(call.id)
-        note = Note(
-            userTempData[call.from_user.id]['title'],
-            userTempData[call.from_user.id]['text']
-            )
+        note = Note()
+        note.setTitle(userTempData[call.from_user.id]['title'])
+        note.setContent(userTempData[call.from_user.id]['text'])
         userId = call.from_user.id
+        user_states[userId] = 'add_note'
         username = call.from_user.username
         db_user_id = db.add_user(userId, username)
         db.add_note(db_user_id, note)
@@ -116,6 +131,7 @@ def viewNotes(call):
     try:
         bot.answer_callback_query(call.id)
         userId = call.from_user.id
+        user_states[userId] = 'view_notes'
         db_user_id = db.get_userId(userId)
         if db_user_id is None:
             markup = types.InlineKeyboardMarkup()
@@ -140,6 +156,10 @@ def viewNotes(call):
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
 
 def editNote(message,userId,oldMessage):
+    if userId not in user_states or user_states.get(userId) != 'view_notes':
+        # Пользователь вышел из состояния создания заметки
+        bot.delete_message(message.chat.id, message.message_id)
+        return
     try:
         noteId = message.text.strip()
         if not noteId.isdigit():
@@ -170,6 +190,11 @@ def editNote(message,userId,oldMessage):
         bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Что-то пошло не так")
 
 def handleEditNoteText(message,note,oldMessage):
+    userId = message.from_user.id
+    if userId not in user_states or user_states.get(userId) != 'view_notes':
+        # Пользователь вышел из состояния создания заметки
+        bot.delete_message(message.chat.id, message.message_id)
+        return
     try:
         newText = message.text.strip()
         if not newText:
@@ -201,7 +226,6 @@ def deleteNote(call):
         markup.add(btnBack)
         bot.answer_callback_query(call.id)
         noteId = call.data.split("_")[1]
-        print(noteId)
         db.delete_note(noteId)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Заметка удалена",reply_markup=markup)
     except Exception as e:
