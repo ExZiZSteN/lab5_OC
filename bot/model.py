@@ -132,20 +132,18 @@ class Database:
         """
         try:
             self.cursor.execute("""
-                SELECT id, title, content
+                SELECT id, title, content 
                 FROM notes 
-                WHERE user_id = %s 
-                                 """, (user_id))
+                WHERE user_id = %s
+            """, (user_id,))
 
-            columns = ['id', 'title', 'content']
-            notes = []
-        
+            rows = self.cursor.fetchall()
             # создание словарей с отображением в них параметров заметки из БД
-            for row in self.cursor.fetchall():
-                note_dict = {}
-                for i, column in enumerate(columns):
-                    note_dict[column] = row[i]
-                notes.append(note_dict)
+            columns = ['id', 'title', 'content']
+            notes = [
+                dict(zip(columns, row))
+                for row in rows
+            ]
             return notes
         except Exception as e:
             print(e)

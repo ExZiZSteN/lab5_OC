@@ -127,7 +127,15 @@ def viewNotes(call):
     try:
         bot.answer_callback_query(call.id)
         userId = call.from_user.id
-        db_user_id = db.get_userID(userId)
+        db_user_id = db.get_userId(userId)
+        if db_user_id is None:
+            markup = types.InlineKeyboardMarkup()
+            btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
+            markup.add(btnBack)
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="У вас нет заметок. Сначала создайте заметку.",reply_markup=markup)
+            return
+        notes = db.get_user_notes(db_user_id)
+        print(notes)
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
