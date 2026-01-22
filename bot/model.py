@@ -45,7 +45,7 @@ class Database:
         
         self.connection.commit()
 
-    def add_user(self, telegramId,username):
+    def add_user(self, telegramId, username):
         """
         Добавление пользователя
         
@@ -60,7 +60,7 @@ class Database:
             )
             userId = self.cursor.fetchone()[0]
             self.connection.commit()
-            return userId
+            return userId    
         except Exception as e:
             print(e)
             self.connection.rollback()
@@ -110,7 +110,7 @@ class Database:
                 for i, column in enumerate(columns):
                     note_dict[column] = row[i]
                 notes.append(note_dict)
-            return notes
+            return notes   
         except Exception as e:
             print(e)
             return []
@@ -166,14 +166,14 @@ class Database:
                 SET {', '.join(updates)} 
                 WHERE id = %s
                 RETURNING id
-                """, (note_id, user_id))
+                """, (note_id))
 
             updated = self.cursor.fetchone() is not None
 
             if updated:
                 self.connection.commit()
 
-            return updated
+            return updated  
         except Exception as e:
             print(e)
             return False

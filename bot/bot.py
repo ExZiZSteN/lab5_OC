@@ -51,7 +51,7 @@ def createNote(call):
         btnBack = types.InlineKeyboardButton("Назад", callback_data = "mainMenu")
         markup.add(btnBack)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text = newText, reply_markup=markup)
-        bot.register_next_step_handler(call.message,handleNoteName,call.from_user.id,call)
+        bot.register_next_step_handler(call.message,handleNoteName,call.from_user.id,call)  
     except Exception as e:
         print(e)
         bot.send_message(call.message.chat.id, "Что-то пошло не так")
@@ -65,7 +65,7 @@ def handleNoteName(message,userId,oldMessage):
         if not title:
             msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Название заметки не может быть пустым",reply_markup=markup)
             bot.register_next_step_handler(msg,handleNoteName,userId,oldMessage)
-            return
+            return    
         if len(title) > 50:
             msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Название слишком длинное. Введите короче",reply_markup=markup)
             bot.register_next_step_handler(msg,handleNoteName,userId,oldMessage)
@@ -74,7 +74,7 @@ def handleNoteName(message,userId,oldMessage):
         userTempData[userId] = {'title':title}
         bot.delete_message(chat_id=message.chat.id,message_id=message.message_id)
         msg = bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id,text=f"Название заметки сохраненно: {title}.\n Введите текст заметки:",reply_markup=markup)
-        bot.register_next_step_handler(msg,handleNoteText,userId,oldMessage)
+        bot.register_next_step_handler(msg,handleNoteText,userId,oldMessage)    
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=message.chat.id,message_id=oldMessage.message.message_id, text="Что-то пошло не так")
