@@ -25,7 +25,10 @@ def start(message):
 def menu(call):
     try:
         user_id = call.from_user.id
-        user_states[user_id] = 'menu'
+        if user_id in userTempData:
+            del userTempData[user_id]
+        if user_id in user_states:
+            del user_states[user_id]
         bot.answer_callback_query(call.id)
         markup = types.InlineKeyboardMarkup()
         btnCreate = types.InlineKeyboardButton("Создать заметку", callback_data = "createNote")
@@ -113,7 +116,6 @@ def addNote(call):
         note.setTitle(userTempData[call.from_user.id]['title'])
         note.setContent(userTempData[call.from_user.id]['text'])
         userId = call.from_user.id
-        user_states[userId] = 'add_note'
         username = call.from_user.username
         db_user_id = db.add_user(userId, username)
         db.add_note(db_user_id, note)
@@ -129,9 +131,9 @@ def addNote(call):
 @bot.callback_query_handler(func=lambda call: call.data == "viewNotes")
 def viewNotes(call):
     try:
-        bot.answer_callback_query(call.id)
         userId = call.from_user.id
         user_states[userId] = 'view_notes'
+        bot.answer_callback_query(call.id)
         db_user_id = db.get_userId(userId)
         if db_user_id is None:
             markup = types.InlineKeyboardMarkup()
@@ -150,14 +152,14 @@ def viewNotes(call):
         for note in notes:
             notesText += f"id: {note.id}\nНазвание: {note.title} \n\n"
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=notesText,reply_markup=markup)
-        bot.register_next_step_handler(call.message,editNote,call,call)
+        bot.register_next_step_handler(call.message,editNote,userId,call)
     except Exception as e:
         print(e)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Что-то пошло не так")
 
 def editNote(message,userId,oldMessage):
     if userId not in user_states or user_states.get(userId) != 'view_notes':
-        # Пользователь вышел из состояния создания заметки
+        # Пользователь вышел из состояния просмотра заметки
         bot.delete_message(message.chat.id, message.message_id)
         return
     try:
@@ -192,7 +194,7 @@ def editNote(message,userId,oldMessage):
 def handleEditNoteText(message,note,oldMessage):
     userId = message.from_user.id
     if userId not in user_states or user_states.get(userId) != 'view_notes':
-        # Пользователь вышел из состояния создания заметки
+        # Пользователь вышел из состояния просмотра заметки
         bot.delete_message(message.chat.id, message.message_id)
         return
     try:
