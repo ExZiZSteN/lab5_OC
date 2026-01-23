@@ -29,6 +29,7 @@ def menu(call):
             del userTempData[user_id]
         if user_id in user_states:
             del user_states[user_id]
+        bot.clear_step_handler_by_chat_id(call.message.chat.id)
         bot.answer_callback_query(call.id)
         markup = types.InlineKeyboardMarkup()
         btnCreate = types.InlineKeyboardButton("Создать заметку", callback_data = "createNote")
@@ -60,7 +61,10 @@ def handleNoteName(message,userId,oldMessage):
 
     if userId not in user_states or user_states.get(userId) != 'creating_note':
         # Пользователь вышел из состояния создания заметки
-        bot.delete_message(message.chat.id, message.message_id)
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
         return
     try:
         title = message.text.strip()
@@ -87,7 +91,10 @@ def handleNoteName(message,userId,oldMessage):
 def handleNoteText(message,userId,oldMessage):
     if userId not in user_states or user_states.get(userId) != 'creating_note':
         # Пользователь вышел из состояния создания заметки
-        bot.delete_message(message.chat.id, message.message_id)
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
         return
     try:
         markup = types.InlineKeyboardMarkup()
@@ -160,7 +167,10 @@ def viewNotes(call):
 def editNote(message,userId,oldMessage):
     if userId not in user_states or user_states.get(userId) != 'view_notes':
         # Пользователь вышел из состояния просмотра заметки
-        bot.delete_message(message.chat.id, message.message_id)
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
         return
     try:
         noteId = message.text.strip()
@@ -195,7 +205,10 @@ def handleEditNoteText(message,note,oldMessage):
     userId = message.from_user.id
     if userId not in user_states or user_states.get(userId) != 'view_notes':
         # Пользователь вышел из состояния просмотра заметки
-        bot.delete_message(message.chat.id, message.message_id)
+        try:
+            bot.delete_message(message.chat.id, message.message_id)
+        except:
+            pass
         return
     try:
         newText = message.text.strip()
